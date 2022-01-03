@@ -45,7 +45,6 @@ const App = () => {
   //if imagesQuery change
   useEffect(() => {
     if (!imagesQuery) {
-      console.log('no query');
       return;
     }
     searchService.searchQuery = imagesQuery;
@@ -68,7 +67,6 @@ const App = () => {
   //if pageQuery change
   useEffect(() => {
     if (pageQuery === 1) {
-      console.log('pageQuery===1');
       return;
     }
 
