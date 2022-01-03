@@ -1,2 +1,2 @@
-# goit-react-hw-03-image-finder
-Домашняя работа №3 ПОИСК ИЗОБРАЖЕНИЙ Pixabay
+# goit-react-hw-04-hooks-images
+Домашняя работа №4 ПОИСК ИЗОБРАЖЕНИЙ Pixabay НА ХУКАХ
