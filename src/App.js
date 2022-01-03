@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 import Loader from 'react-loader-spinner';
@@ -12,103 +12,103 @@ import Searchbar from './components/searchbar/Searchbar';
 // import initData from './data/Data.json';
 import { searchService } from './services/searchAPI.js';
 
-class App extends React.Component {
-  state = {
-    pageQuery: 1,
-    imagesQuery: null,
-    images: [],
-    modalImage: null,
-    loading: false,
-  };
+const App = () => {
+  const [pageQuery, setPageQuery] = useState(1);
+  const [imagesQuery, setimagesQuery] = useState(null);
+  const [images, setImages] = useState([]);
+  const [modalImage, setModalImage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  handleImages = imagesQuery => {
+  const handleImages = imagesQuery => {
     if (!imagesQuery) {
       toast.warn('Enter some query!');
-      return this.setState({ images: [] });
+      setImages([]);
+      return;
     } else {
-      this.setState({ pageQuery: 1, imagesQuery });
+      setPageQuery(1);
+      setimagesQuery(imagesQuery);
     }
   };
 
-  fetchImages = () => {
-    const { imagesQuery, pageQuery } = this.state;
+  const showModal = modalImage => {
+    setModalImage(modalImage);
+  };
 
-    this.setState({ loading: true });
+  const closeModal = () => {
+    setModalImage(null);
+  };
 
+  const loadMore = () => {
+    setPageQuery(prev => prev + 1);
+  };
+
+  //if imagesQuery change
+  useEffect(() => {
+    if (!imagesQuery) {
+      console.log('no query');
+      return;
+    }
     searchService.searchQuery = imagesQuery;
+    searchService.resetPage();
+    setIsLoading(true);
     searchService
       .fetchSearch()
       .then(images => {
         if (images.hits.length === 0) {
           toast.error('No images with this query!');
         }
-        if (pageQuery > 1) {
-          this.setState(prevState => ({
-            images: [...prevState.images, ...images.hits],
-          }));
-        } else {
-          this.setState({ images: images.hits });
-        }
+        setImages(images.hits);
       })
       .catch(error => toast.error(error.code))
       .finally(() => {
-        this.setState({ loading: false });
+        setIsLoading(false);
       });
-  };
+  }, [imagesQuery]);
 
-  componentDidUpdate(_, prevState) {
-    const { imagesQuery, pageQuery } = this.state;
-
-    if (prevState.imagesQuery !== imagesQuery) {
-      searchService.resetPage();
-      this.fetchImages();
+  //if pageQuery change
+  useEffect(() => {
+    if (pageQuery === 1) {
+      console.log('pageQuery===1');
+      return;
     }
 
-    if (prevState.pageQuery !== pageQuery) {
-      this.fetchImages();
-    }
-  }
+    setIsLoading(true);
+    searchService
+      .fetchSearch()
+      .then(images => {
+        if (images.hits.length === 0) {
+          toast.error('No more images!');
+        }
+        setImages(prev => [...prev, ...images.hits]);
+      })
+      .catch(error => toast.error(error.code))
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [pageQuery]);
 
-  loadMore = () => {
-    this.setState(prevState => {
-      return { pageQuery: prevState.pageQuery + 1 };
-    });
-  };
-
-  showModal = modalImage => {
-    this.setState({ modalImage });
-  };
-
-  closeModal = () => {
-    this.setState({ modalImage: null });
-  };
-
-  render() {
-    const { images, modalImage, loading } = this.state;
-
-    return (
-      <>
-        <Searchbar onSubmit={this.handleImages} />
-        <ImageGallery images={images} showModal={this.showModal} />
-        {loading && (
-          <Loader
-            type="ThreeDots"
-            color="#00BFFF"
-            height={80}
-            width={80}
-            style={{ textAlign: 'center' }}
-          />
-        )}
-        {images.length > 0 && <Button loadMoreBtn={this.loadMore} />}
-        {modalImage && (
-          <Modal closeModal={this.closeModal}>
-            <img src={modalImage.largeImageURL} alt={modalImage.tags} />
-          </Modal>
-        )}
-        <ToastContainer position="top-right" autoClose={3000} />
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <Searchbar onSubmit={handleImages} />
+      <ImageGallery images={images} showModal={showModal} />
+      {isLoading && (
+        <Loader
+          type="ThreeDots"
+          color="#00BFFF"
+          height={80}
+          width={80}
+          style={{ textAlign: 'center' }}
+        />
+      )}
+      {images.length > 0 && <Button loadMoreBtn={loadMore} />}
+      {modalImage && (
+        <Modal closeModal={closeModal}>
+          <img src={modalImage.largeImageURL} alt={modalImage.tags} />
+        </Modal>
+      )}
+      <ToastContainer position="top-right" autoClose={3000} />
+    </>
+  );
+};
 
 export default App;
